@@ -64,8 +64,8 @@ Entrada Texto  →  [GPT-4o] → Análise laudo maternal               │      
 - **Aplicação:** EDA e extração de limiares clínicos para o sistema de alertas
 
 **Resultados EDA (Notebook 01):**
-- Pressão Sistólica: variável com maior correlação com risco (r = ___)
-- Random Forest baseline: acurácia = ___, F1 = ___
+- BS (glicose): maior correlação com risco (r = 0.570); SistólicaBP: r = 0.400
+- Random Forest baseline: acurácia = 0.86, F1-weighted = 0.86
 - Limiares exportados: PA ≥ 140 mmHg, BS ≥ 7.8 mmol/L, FC > 100 bpm
 
 ### 3.2 RAVDESS + CREMA-D (Emoção Vocal)
@@ -75,10 +75,10 @@ Entrada Texto  →  [GPT-4o] → Análise laudo maternal               │      
 - **Aplicação:** Treinamento do classificador binário de risco vocal
 
 **Resultados Treinamento (Notebook 02):**
-- Melhor modelo: ___ (SVM / Random Forest / Naive Bayes)
-- F1-weighted: ___
-- AUC-ROC binário (risco vs sem risco): ___
-- Recall de `fearful`: ___ | `sad`: ___
+- Melhor modelo: SVM RBF com GridSearchCV e `class_weight='balanced'`
+- F1-weighted (multiclasse): 0.6494
+- AUC-ROC binário (risco vs sem risco): 0.8169
+- Emoções de risco: fearful, sad, disgust, angry → classe binária "risco"
 
 ### 3.3 m2caiSeg (Instrumentos Cirúrgicos)
 - **Fonte:** Dataset de laparoscopia com máscaras de segmentação
@@ -87,9 +87,9 @@ Entrada Texto  →  [GPT-4o] → Análise laudo maternal               │      
 - **Aplicação:** Fine-tuning YOLOv8 para detecção de instrumentos
 
 **Resultados Fine-tuning YOLOv8 (Notebook 03):**
-- mAP@50: ___
-- Precision: ___ | Recall: ___
-- Épocas até convergência: ___
+- mAP@50: **0.9950** | mAP@50-95: 0.9696
+- Precision: 0.984 | Recall: **1.000**
+- Modelo: yolov8s.pt, 100 épocas, early stopping (patience=15)
 
 ---
 
@@ -127,11 +127,11 @@ Entrada Texto  →  [GPT-4o] → Análise laudo maternal               │      
 
 | Modalidade | Achado | Alerta |
 |---|---|---|
-| Vídeo (DeepFace) | ___ frames com emoção de risco | ___ |
-| Vídeo (MediaPipe) | ___ posturas defensivas | ___ |
-| Áudio | Emoção vocal: ___ (prob: ___) | ___ |
-| Texto (GPT-4o) | Risco: critical — PA 158/102, RCIU | ✅ |
-| **Global** | **Score: _/5 — Risco: ___** | **___** |
+| Vídeo (DeepFace) | 57 frames analisados; sad=17, fear=5; 24 alertas | ✅ |
+| Vídeo (MediaPipe) | 56 poses detectadas; 49 frames com alerta (87.5%) | ✅ |
+| Áudio | Emoção vocal: normal (prob risco: 60.3%) | ❌ |
+| Texto (palavras-chave) | Risco: critical — hipertensão, pré-eclâmpsia, RCIU | ✅ |
+| **Global** | **Score: 4/5 — Risco: CRITICAL** | **✅ ALERTA ENVIADO** |
 
 ### 5.2 Anomalias Salvas
 - `reports/anomalies_examples/dashboard_demo.png`
@@ -178,8 +178,6 @@ tech-challenge-fase4/
 ---
 
 ## 8. Conclusão
-
-_(preencher após executar os notebooks e obter os resultados finais)_
 
 O sistema demonstra capacidade de:
 1. Detectar precocemente indicadores de risco gestacional via análise multimodal

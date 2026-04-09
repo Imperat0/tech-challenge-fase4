@@ -1,0 +1,57 @@
+{
+  "report_id": "RPT-20260409191137",
+  "patient_id": "PAC-DEMO-001",
+  "timestamp": "2026-04-09T19:11:37.683692",
+  "overall_risk": "critical",
+  "requires_immediate_attention": true,
+  "scores": {
+    "video": 1,
+    "audio": 0,
+    "text": 3,
+    "total": 4
+  },
+  "video_summary": {
+    "total_frames": 56,
+    "alert_frames": 49,
+    "risk_pct": 87.5
+  },
+  "audio_summary": {
+    "predicted_emotion": "normal",
+    "alert": false,
+    "probability": 0.603
+  },
+  "text_summary": {
+    "risk_level": "critical",
+    "findings": [
+      "hipertensão",
+      "pré-eclâmpsia",
+      "proteinúria",
+      "RCIU",
+      "plaquetas",
+      "oligoidrâmnio"
+    ],
+    "violence_indicators": [
+      "evita contato visual",
+      "frases curtas",
+      "choro",
+      "sensação de que algo vai dar errado"
+    ],
+    "mental_health_signs": [
+      "insônia",
+      "choro frequente"
+    ],
+    "recommendations": [
+      "Internação imediata",
+      "Monitoramento fetal contínuo",
+      "Avaliação saúde mental"
+    ],
+    "alert": true,
+    "method": "keywords"
+  },
+  "recommendations": [
+    "Internação imediata",
+    "Monitoramento fetal contínuo",
+    "Avaliação saúde mental"
+  ],
+  "alert_generated": true
+}
