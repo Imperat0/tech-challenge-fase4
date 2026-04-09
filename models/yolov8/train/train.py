@@ -18,8 +18,9 @@ import argparse
 from pathlib import Path
 from ultralytics import YOLO
 
-CONFIG = Path(__file__).parent.parent / "configs" / "data.yaml"
-OUTPUT = Path(__file__).parent.parent / "weights"
+# YOLOv8 no Windows não suporta acentos no path — usamos cópia em C:/yolo_tmp/
+CONFIG = Path("C:/yolo_tmp/m2caiSeg/data.yaml")
+OUTPUT = Path(__file__).resolve().parent.parent / "weights"
 
 
 def train(
