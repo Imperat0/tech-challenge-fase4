@@ -1,0 +1,13 @@
+# Normalizar line endings para LF em todos os arquivos de texto
+* text=auto eol=lf
+
+# Binários — nunca converter
+*.wav  binary
+*.mp3  binary
+*.mp4  binary
+*.avi  binary
+*.jpg  binary
+*.png  binary
+*.pt   binary
+*.pkl  binary
+*.pdf  binary
