@@ -96,9 +96,14 @@ Entrada Texto  →  [GPT-4o] → Análise laudo maternal               │      
 ## 4. Modelos Especializados
 
 ### 4.1 YOLOv8 — Detecção de Instrumentos Cirúrgicos
-- **Modelo base:** `yolov8n.pt` (pré-treinado COCO, transfer learning)
+- **Modelo base:** `yolov8s.pt` (pré-treinado COCO, transfer learning)
+  - As aulas utilizam `yolov8n` (nano) como padrão para demonstrações rápidas em CPU.
+    Optamos por `yolov8s` (small, ~3.5× mais parâmetros) para aproveitar a RTX 5060 Ti disponível,
+    o que resultou em mAP@50 = 0.995. A troca entre variantes é um único argumento em `train.py`
+    (`--model yolov8n.pt`); o restante do pipeline consome sempre `models/yolov8/weights/best.pt`
+    e não depende de qual variante foi usada no treino.
 - **Classe detectada:** `surgical_instrument` (1 classe)
-- **Augmentation:** mosaic, flipud, fliplr, HSV
+- **Augmentation:** mosaic, flipud, fliplr, HSV, perspective, mixup, copy-paste
 - **Localização:** `models/yolov8/weights/best.pt`
 
 ### 4.2 Classificador de Emoção Vocal

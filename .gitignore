@@ -35,6 +35,14 @@ data/datasets/**/*.pkl
 
 # Modelos grandes
 models/yolov8/weights/*.pt
+*.pt
+notebooks/runs/
+
+# Imagens do dataset m2caiSeg (18MB+ — baixar via script de conversão)
+data/datasets/surgical_tools/m2caiSeg/train/
+data/datasets/surgical_tools/m2caiSeg/test/
+data/datasets/surgical_tools/m2caiSeg/trainval/
+data/videos/processed/
 
 # OS
 .DS_Store
