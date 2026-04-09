@@ -1,0 +1,17 @@
+# Configuração do dataset para fine-tuning YOLOv8
+# Preencha os caminhos após baixar o dataset de instrumentos cirúrgicos
+
+path: ../../../data/datasets/surgical_tools   # raiz do dataset
+train: images/train
+val: images/val
+test: images/test
+
+# Número de classes
+nc: 4
+
+# Nomes das classes — ajuste conforme o dataset escolhido (EndoVis / Cholec80)
+names:
+  0: grasper
+  1: hook
+  2: scissors
+  3: clipper

@@ -1,0 +1,8 @@
+# Dataset m2caiSeg convertido para YOLOv8
+path: C:\Users\T-GAMER\Documents\PósTech - Fase 4\tech-challenge-fase4\data\datasets\surgical_tools\m2caiSeg
+train: train/images
+val: test/images
+
+nc: 1
+names:
+  0: surgical_instrument

@@ -1,0 +1,41 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dados brutos (grandes demais para o Git)
+data/videos/raw/
+data/audios/raw/
+
+# Datasets binários — ignorar arquivos de áudio/vídeo/imagem
+data/datasets/**/*.wav
+data/datasets/**/*.mp3
+data/datasets/**/*.jpg
+data/datasets/**/*.png
+data/datasets/**/*.avi
+data/datasets/**/*.mp4
+data/datasets/**/*.pkl
+
+# Manter arquivos de configuração e scripts dentro dos datasets
+!data/datasets/**/*.py
+!data/datasets/**/*.yaml
+!data/datasets/**/*.json
+!data/datasets/**/*.csv
+
+# Modelos grandes
+models/yolov8/weights/*.pt
+
+# OS
+.DS_Store
+Thumbs.db
