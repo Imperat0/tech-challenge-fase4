@@ -1,0 +1,20 @@
+{
+  "SystolicBP_high_risk": 140,
+  "DiastolicBP_high_risk": 90,
+  "BS_high_risk": 7.8,
+  "BodyTemp_fever": 100.0,
+  "HeartRate_tachycardia": 100,
+  "top_features": [
+    "BS",
+    "SystolicBP",
+    "Age"
+  ],
+  "feature_importances": {
+    "Age": 0.1599,
+    "SystolicBP": 0.1886,
+    "DiastolicBP": 0.1242,
+    "BS": 0.3659,
+    "BodyTemp": 0.0595,
+    "HeartRate": 0.1019
+  }
+}
