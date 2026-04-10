@@ -28,4 +28,4 @@ jobs:
           pip install pytest
       - name: Rodar testes
         run: |
-          pytest tests/
+         PYTHONPATH=$PYTHONPATH:. pytest tests/
