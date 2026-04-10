@@ -21,7 +21,8 @@ jobs:
 
       - name: Instalar dependências
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --upgrade pip
+          pip install "setuptools<70" wheel
           pip install -r requirements.txt
 
       - name: Rodar testes
