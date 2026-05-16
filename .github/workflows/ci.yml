@@ -1,4 +1,4 @@
-name: CI - Tech Challenge Fase 4
+name: CI/CD - Tech Challenge Fase 4
 
 on:
   push:
@@ -26,6 +26,26 @@ jobs:
           pip install --no-build-isolation openai-whisper==20231117
           pip install -r requirements.txt
           pip install pytest
+
       - name: Rodar testes
         run: |
-         PYTHONPATH=$PYTHONPATH:. pytest tests/
+          PYTHONPATH=$PYTHONPATH:. pytest tests/
+
+  deploy:
+    name: Sync to Hugging Face Hub
+    needs: test           
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push para o Hugging Face Spaces
+        uses: huggingface/hub-sync@v0.1.0
+        with:
+          github_repo_id: ${{ github.repository }}
+          huggingface_repo_id: imperat0/tech-challenge-fase4
+          hf_token: ${{ secrets.HF_TOKEN }}
+          space_sdk: gradio
