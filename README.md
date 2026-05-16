@@ -1,3 +1,15 @@
+---
+title: Tech Challenge Fase 4
+emoji: 🎙️
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 4.44.1
+app_file: src/pipeline/orchestrator.py
+pinned: false
+license: mit
+---
+
 # Tech Challenge — Fase 4
 **PosTech FIAP | IA para Devs**
 
