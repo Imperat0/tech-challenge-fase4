@@ -1,6 +1,3 @@
-setuptools==69.5.1
-wheel
-
 # Visão Computacional
 opencv-python==4.9.0.80
 deepface==0.0.93
@@ -11,7 +8,7 @@ face-recognition==1.3.0
 # Áudio
 moviepy==1.0.3
 SpeechRecognition==3.10.4
-openai-whisper==20231117
+openai-whisper @ git+https://github.com/openai/whisper.git@v20231117
 pydub==0.25.1
 librosa==0.10.2             # Análise prosódia / tom de voz
 resampy==0.4.3              # Resampling de áudio (dep. librosa)
