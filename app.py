@@ -7,18 +7,22 @@ def process_multimodal_analysis(video_file, clinical_text, patient_id):
     # Validação simples dos campos obrigatórios
     if not video_file:
         return "⚠️ Por favor, faça o upload de um vídeo para análise."
-    if not patient_id:
-        patient_id = "PAC-TEMP"
+        
+    if not patient_id or not patient_id.strip():
+        patient_id = "ANONIMO"
+
+    # CORREÇÃO: Se o texto estiver vazio, envia None para ativar o fallback do Whisper
+    text_param = clinical_text.strip() if clinical_text and clinical_text.strip() else None
 
     try:
-        # Executa o pipeline do seu Tech Challenge passando o path do vídeo salvo temporariamente pelo Gradio
+        # Executa o pipeline do seu Tech Challenge
         report = run_pipeline(
             video_path=video_file,
-            clinical_text=clinical_text or "",
+            clinical_text=text_param,
             patient_id=patient_id
         )
         
-        # Formata o retorno para exibição visual limpa na interface
+        # Retorna o dicionário diretamente para o gr.JSON
         return report
         
     except Exception as e:
@@ -32,16 +36,14 @@ with gr.Blocks(title="Tech Challenge Fase 4 — Monitoramento Multimodal") as de
     with gr.Row():
         with gr.Column():
             gr.Markdown("### 📥 Dados de Entrada")
-            # Componente de vídeo que lida nativamente com uploads no Hugging Face
-            input_video = gr.Video(label="Upload do Vídeo Clínico/Consulta", type="filepath")
-            input_text = gr.Textbox(label="Laudo Clínico / Notas de Texto", lines=4, placeholder="Digite as observações clínicas...")
+            input_video = gr.Video(label="Upload do Vídeo Clínico/Consulta")
+            input_text = gr.Textbox(label="Laudo Clínico / Notas de Texto (Opcional)", lines=4, placeholder="Digite as observações ou deixe vazio para usar a transcrição do áudio...")
             input_id = gr.Textbox(label="ID da Paciente", placeholder="Ex: PAC-001")
             
             btn_submit = gr.Button("🚀 Iniciar Análise Multimodal", variant="primary")
             
         with gr.Column():
             gr.Markdown("### 📊 Relatório e Score de Risco")
-            # Saída estruturada em JSON (ou mude para gr.Markdown se formatar o texto no orchestrator)
             output_report = gr.JSON(label="Resultado do Score de Risco")
 
     # Mapeamento do clique do botão para a função de processamento
