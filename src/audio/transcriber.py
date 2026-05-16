@@ -20,7 +20,8 @@ def transcribe_with_whisper(audio_path: str, model_size: str = "base") -> dict:
     Returns:
         Dict com text, language e segments com timestamps.
     """
-    model = whisper.load_model(model_size)
+    # Garanta que o modelo escolhido seja leve para rodar na CPU gratuita
+    model = whisper.load_model("tiny")
     result = model.transcribe(audio_path, language="pt")
     return {
         "text": result["text"].strip(),

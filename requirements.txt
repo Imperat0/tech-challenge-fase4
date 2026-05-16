@@ -1,3 +1,6 @@
+setuptools==69.5.1
+wheel
+
 # Visão Computacional
 opencv-python==4.9.0.80
 deepface==0.0.93
