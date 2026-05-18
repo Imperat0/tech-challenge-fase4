@@ -7,7 +7,19 @@ Objetivos cobertos:
 - Triagem de violência: detecção de linguagem corporal indicativa de abuso
 """
 
-from deepface import DeepFace
+import logging
+import traceback
+
+try:
+    from deepface import DeepFace
+    logger = logging.getLogger(__name__)
+    logger.info("✅ DeepFace importado com sucesso")
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.error(f"❌ Falha ao importar DeepFace: {e}")
+    logger.debug(traceback.format_exc())
+    DeepFace = None
+
 import cv2
 import numpy as np
 
@@ -17,6 +29,10 @@ EMOTIONS_OF_CONCERN = {"fear", "sad", "disgust", "angry"}
 
 def analyze_frame_emotions(frame: np.ndarray) -> list[dict]:
     """Analisa emoções de todos os rostos detectados em um frame."""
+    if DeepFace is None:
+        logger.warning("⚠️  DeepFace não disponível, retornando lista vazia")
+        return []
+    
     try:
         results = DeepFace.analyze(
             frame,
@@ -25,7 +41,8 @@ def analyze_frame_emotions(frame: np.ndarray) -> list[dict]:
             silent=True,
         )
         return results if isinstance(results, list) else [results]
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Erro na análise de emoção de frame: {e}")
         return []
 
 
@@ -40,30 +57,40 @@ def process_video_emotions(video_path: str, sample_rate: int = 30) -> list[dict]
     Returns:
         Lista de dicts com frame_number, timestamp, emotions e flag de alerta.
     """
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30
-    results = []
-    frame_count = 0
+    if DeepFace is None:
+        logger.warning("⚠️  DeepFace indisponível, pulando análise de emoção facial")
+        return []
+    
+    try:
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        results = []
+        frame_count = 0
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        if frame_count % sample_rate == 0:
-            analyses = analyze_frame_emotions(frame)
-            for analysis in analyses:
-                dominant = analysis.get("dominant_emotion", "")
-                alert = dominant in EMOTIONS_OF_CONCERN
-                results.append({
-                    "frame": frame_count,
-                    "timestamp_s": round(frame_count / fps, 2),
-                    "dominant_emotion": dominant,
-                    "emotions": analysis.get("emotion", {}),
-                    "alert": alert,
-                })
+            if frame_count % sample_rate == 0:
+                analyses = analyze_frame_emotions(frame)
+                for analysis in analyses:
+                    dominant = analysis.get("dominant_emotion", "")
+                    alert = dominant in EMOTIONS_OF_CONCERN
+                    results.append({
+                        "frame": frame_count,
+                        "timestamp_s": round(frame_count / fps, 2),
+                        "dominant_emotion": dominant,
+                        "emotions": analysis.get("emotion", {}),
+                        "alert": alert,
+                    })
 
-        frame_count += 1
+            frame_count += 1
 
-    cap.release()
-    return results
+        cap.release()
+        return results
+    
+    except Exception as e:
+        logger.error(f"❌ Erro ao processar vídeo com DeepFace: {e}")
+        logger.debug(traceback.format_exc())
+        return []

@@ -27,11 +27,13 @@ transformers==4.41.0
 torch==2.3.0
 nltk==3.8.1
 
-# Deep Learning (TF 2.15 + mediapipe compatível; TF 2.21+ quebra mediapipe)
-tensorflow==2.15.0          # Pinado: mediapipe 0.10.x requer protobuf~4.25
-jax==0.4.25                 # Pinado: jax 0.9+ requer numpy>=2.0 (incompatível TF 2.15)
+# Deep Learning - IMPORTANTE: TensorFlow compatível com Hugging Face Spaces
+# TF 2.15 requer: protobuf~4.25, ml_dtypes~=0.2.0, numpy<2.0
+# Alternativa lightweight se TF falhar: apenas usar DeepFace com fallback
+tensorflow==2.15.0
+jax==0.4.25
 jaxlib==0.4.25
-ml-dtypes==0.2.0            # Pinado: TF 2.15 requer ml_dtypes~=0.2.0
+ml-dtypes==0.2.0
 
 # Dados e utilidades
 pandas==2.2.2

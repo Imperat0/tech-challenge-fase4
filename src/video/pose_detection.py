@@ -7,12 +7,24 @@ Objetivos cobertos:
 - Fisioterapia: análise de movimentos e recuperação pós-parto
 """
 
-import mediapipe as mp
+import logging
+import traceback
+
+try:
+    import mediapipe as mp
+    logger = logging.getLogger(__name__)
+    logger.info("✅ MediaPipe importado com sucesso")
+    mp_pose = mp.solutions.pose
+    mp_drawing = mp.solutions.drawing_utils
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.error(f"❌ Falha ao importar MediaPipe: {e}")
+    logger.debug(traceback.format_exc())
+    mp_pose = None
+    mp_drawing = None
+
 import cv2
 import numpy as np
-
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
 
 
 # Índices dos landmarks relevantes para postura defensiva
@@ -62,40 +74,50 @@ def process_video_pose(video_path: str, sample_rate: int = 30) -> list[dict]:
     Returns:
         Lista com frame, timestamp, postura detectada e flag de alerta.
     """
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30
-    results = []
-    frame_count = 0
+    if mp_pose is None:
+        logger.warning("⚠️  MediaPipe Pose indisponível, pulando análise de pose")
+        return []
+    
+    try:
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        results = []
+        frame_count = 0
 
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
+        with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-            if frame_count % sample_rate == 0:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                result = pose.process(rgb)
+                if frame_count % sample_rate == 0:
+                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    result = pose.process(rgb)
 
-                if result.pose_landmarks:
-                    defensive = detect_defensive_posture(result.pose_landmarks)
-                    results.append({
-                        "frame": frame_count,
-                        "timestamp_s": round(frame_count / fps, 2),
-                        "pose_detected": True,
-                        "defensive_posture": defensive,
-                        "alert": defensive,
-                    })
-                else:
-                    results.append({
-                        "frame": frame_count,
-                        "timestamp_s": round(frame_count / fps, 2),
-                        "pose_detected": False,
-                        "defensive_posture": False,
-                        "alert": False,
-                    })
+                    if result.pose_landmarks:
+                        defensive = detect_defensive_posture(result.pose_landmarks)
+                        results.append({
+                            "frame": frame_count,
+                            "timestamp_s": round(frame_count / fps, 2),
+                            "pose_detected": True,
+                            "defensive_posture": defensive,
+                            "alert": defensive,
+                        })
+                    else:
+                        results.append({
+                            "frame": frame_count,
+                            "timestamp_s": round(frame_count / fps, 2),
+                            "pose_detected": False,
+                            "defensive_posture": False,
+                            "alert": False,
+                        })
 
-            frame_count += 1
+                frame_count += 1
 
-    cap.release()
-    return results
+        cap.release()
+        return results
+    
+    except Exception as e:
+        logger.error(f"❌ Erro ao processar pose no vídeo: {e}")
+        logger.debug(traceback.format_exc())
+        return []

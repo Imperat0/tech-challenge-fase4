@@ -1,11 +1,51 @@
 import logging
 import traceback
 import gradio as gr
-from src.pipeline.orchestrator import run_pipeline
 from src.utils.logger import setup_logger, log_exception
 
 # Setup logger centralizado
 logger = setup_logger(__name__)
+
+# ── VERIFICAÇÃO DE DEPENDÊNCIAS ─────────────────────────────────────────
+logger.info("=" * 70)
+logger.info("📦 VERIFICANDO DEPENDÊNCIAS")
+
+def check_dependency(name: str, import_statement: str = None) -> bool:
+    """Verifica se uma dependência está disponível."""
+    try:
+        import_stmt = import_statement or f"import {name}"
+        exec(import_stmt)
+        logger.info(f"✅ {name:30} → Disponível")
+        return True
+    except ImportError as e:
+        logger.warning(f"⚠️  {name:30} → NÃO DISPONÍVEL: {e}")
+        return False
+    except Exception as e:
+        logger.warning(f"⚠️  {name:30} → ERRO: {e}")
+        return False
+
+# Verificar dependências críticas
+deps = {
+    "cv2": "import cv2",
+    "deepface": "import deepface",
+    "mediapipe": "import mediapipe",
+    "ultralytics": "from ultralytics import YOLO",
+    "moviepy": "from moviepy.editor import VideoFileClip",
+    "whisper": "import whisper",
+    "librosa": "import librosa",
+    "tensorflow": "import tensorflow",
+    "torch": "import torch",
+    "transformers": "from transformers import pipeline",
+}
+
+available_deps = {}
+for dep_name, import_stmt in deps.items():
+    available_deps[dep_name] = check_dependency(dep_name, import_stmt)
+
+logger.info("=" * 70)
+
+# ── IMPORTAR PIPELINE ───────────────────────────────────────────────────
+from src.pipeline.orchestrator import run_pipeline
 
 def executar_pipeline(video, texto_clinico, id_paciente):
     """Executa pipeline com logging detalhado de erros."""
@@ -52,6 +92,12 @@ def executar_pipeline(video, texto_clinico, id_paciente):
         error_msg = log_exception(logger, e, "ARQUIVO_NAO_ENCONTRADO")
         return f"❌ Arquivo não encontrado:\n{error_msg}\n\n📍 Verifique se o vídeo foi carregado corretamente."
     
+    except ImportError as e:
+        error_msg = log_exception(logger, e, "IMPORTACAO")
+        msg = f"❌ Erro de dependência:\n{error_msg}\n\n🔧 Dependências disponíveis:\n"
+        msg += "\n".join([f"  {'✅' if v else '❌'} {k}" for k, v in available_deps.items()])
+        return msg
+    
     except ValueError as e:
         error_msg = log_exception(logger, e, "VALOR_INVALIDO")
         return f"❌ Valor inválido nos parâmetros:\n{error_msg}"
@@ -59,10 +105,6 @@ def executar_pipeline(video, texto_clinico, id_paciente):
     except RuntimeError as e:
         error_msg = log_exception(logger, e, "ERRO_EXECUCAO")
         return f"❌ Erro durante execução (API/Modelo):\n{error_msg}\n\n💡 Possível causa: API Key faltando ou limite de rate reached."
-    
-    except ImportError as e:
-        error_msg = log_exception(logger, e, "IMPORTACAO")
-        return f"❌ Erro de dependência:\n{error_msg}\n\n🔧 Verifique se todas as bibliotecas estão instaladas."
     
     except Exception as e:
         error_msg = log_exception(logger, e, "ERRO_DESCONHECIDO")
