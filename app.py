@@ -1,33 +1,73 @@
+import logging
+import traceback
 import gradio as gr
 from src.pipeline.orchestrator import run_pipeline
+from src.utils.logger import setup_logger, log_exception
+
+# Setup logger centralizado
+logger = setup_logger(__name__)
 
 def executar_pipeline(video, texto_clinico, id_paciente):
-    if video is None:
-        return "⚠️ Por favor, selecione um vídeo de teste."
-    
-    # CORREÇÃO: Transforma string vazia ou espaços em None para ativar o fallback do Whisper
-    texto_filtrado = texto_clinico.strip() if texto_clinico and texto_clinico.strip() else None
-    id_filtrado = id_paciente.strip() if id_paciente and id_paciente.strip() else "PAC-HF-TEST"
-    
+    """Executa pipeline com logging detalhado de erros."""
     try:
+        logger.info("=" * 60)
+        logger.info("🚀 INICIANDO PIPELINE - Entrada do usuário")
+        
+        if video is None:
+            logger.warning("⚠️ Vídeo não fornecido")
+            return "⚠️ Por favor, selecione um vídeo de teste."
+        
+        logger.info(f"📹 Vídeo recebido: tipo={type(video)}, tamanho={len(video) if hasattr(video, '__len__') else 'unknown'}")
+        
+        # CORREÇÃO: Transforma string vazia ou espaços em None para ativar o fallback do Whisper
+        texto_filtrado = texto_clinico.strip() if texto_clinico and texto_clinico.strip() else None
+        id_filtrado = id_paciente.strip() if id_paciente and id_paciente.strip() else "PAC-HF-TEST"
+        
+        logger.info(f"📝 Texto clínico: {'fornecido' if texto_filtrado else 'não fornecido'}")
+        logger.info(f"👤 ID do paciente: {id_filtrado}")
+        
         # Executa o seu orquestrador multimodal
+        logger.info("🔄 Chamando orquestrador...")
         resultado = run_pipeline(
             video_path=video,
             clinical_text=texto_filtrado,
             patient_id=id_filtrado
         )
         
+        logger.info("✅ Pipeline executado com sucesso")
+        logger.info(f"📊 Resultado: {resultado}")
+        
         # Formata o retorno de forma legível para o gr.Textbox
         if isinstance(resultado, dict):
             risco = resultado.get("overall_risk", "NÃO DETECTADO").upper()
             atencao = "SIM" if resultado.get("requires_immediate_attention") else "NÃO"
-            return f"📊 ANÁLISE CONCLUÍDA\n\n🔴 Nível de Risco Geral: {risco}\n🚨 Requer Atenção Imediata? {atencao}"
+            msg = f"📊 ANÁLISE CONCLUÍDA\n\n🔴 Nível de Risco Geral: {risco}\n🚨 Requer Atenção Imediata? {atencao}"
+            logger.info(f"💾 Mensagem retornada: {msg}")
+            return msg
         
+        logger.info(f"📋 Resultado em formato string: {str(resultado)}")
         return str(resultado)
         
+    except FileNotFoundError as e:
+        error_msg = log_exception(logger, e, "ARQUIVO_NAO_ENCONTRADO")
+        return f"❌ Arquivo não encontrado:\n{error_msg}\n\n📍 Verifique se o vídeo foi carregado corretamente."
+    
+    except ValueError as e:
+        error_msg = log_exception(logger, e, "VALOR_INVALIDO")
+        return f"❌ Valor inválido nos parâmetros:\n{error_msg}"
+    
+    except RuntimeError as e:
+        error_msg = log_exception(logger, e, "ERRO_EXECUCAO")
+        return f"❌ Erro durante execução (API/Modelo):\n{error_msg}\n\n💡 Possível causa: API Key faltando ou limite de rate reached."
+    
+    except ImportError as e:
+        error_msg = log_exception(logger, e, "IMPORTACAO")
+        return f"❌ Erro de dependência:\n{error_msg}\n\n🔧 Verifique se todas as bibliotecas estão instaladas."
+    
     except Exception as e:
-        # Se faltar alguma API Key ou pacote de sistema, o erro aparecerá aqui em vez de travar a tela
-        return f"❌ Erro interno durante a execução do pipeline:\n\n{str(e)}"
+        error_msg = log_exception(logger, e, "ERRO_DESCONHECIDO")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
+        return f"❌ Erro interno durante a execução do pipeline:\n\n{error_msg}\n\n📋 Stack trace está nos logs."
 
 # Monta o design da página web que vai aparecer no Hugging Face
 with gr.Blocks(title="Monitoramento Multimodal") as demo:
@@ -47,4 +87,6 @@ with gr.Blocks(title="Monitoramento Multimodal") as demo:
     btn.click(fn=executar_pipeline, inputs=[input_video, input_text, input_id], outputs=output_text)
 
 if __name__ == "__main__":
+    logger.info("🌐 Iniciando Gradio Interface")
+    logger.info(f"LOG_LEVEL configurado: {logger.level}")
     demo.launch()
