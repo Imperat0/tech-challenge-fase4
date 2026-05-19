@@ -48,18 +48,19 @@ logger.info("=" * 70)
 from src.pipeline.orchestrator import run_pipeline
 
 def executar_pipeline(video, texto_clinico, id_paciente):
-    """Executa pipeline com logging detalhado de erros."""
+    """Executa pipeline com logging detalhado de erros e múltiplos retornos para a UI."""
     try:
         logger.info("=" * 60)
         logger.info("🚀 INICIANDO PIPELINE - Entrada do usuário")
         
         if video is None:
             logger.warning("⚠️ Vídeo não fornecido")
-            return "⚠️ Por favor, selecione um vídeo de teste."
+            erro_html = "<div style='color: #ef4444; padding: 10px; border: 1px solid #ef4444; border-radius: 8px;'>⚠️ Por favor, selecione um vídeo de teste.</div>"
+            return erro_html, "", {"status": "erro", "detalhe": "Vídeo não fornecido"}
         
         logger.info(f"📹 Vídeo recebido: tipo={type(video)}, tamanho={len(video) if hasattr(video, '__len__') else 'unknown'}")
         
-        # CORREÇÃO: Transforma string vazia ou espaços em None para ativar o fallback do Whisper
+        # Transforma string vazia ou espaços em None para ativar o fallback do Whisper
         texto_filtrado = texto_clinico.strip() if texto_clinico and texto_clinico.strip() else None
         id_filtrado = id_paciente.strip() if id_paciente and id_paciente.strip() else "PAC-HF-TEST"
         
@@ -75,58 +76,94 @@ def executar_pipeline(video, texto_clinico, id_paciente):
         )
         
         logger.info("✅ Pipeline executado com sucesso")
-        logger.info(f"📊 Resultado: {resultado}")
         
-        # Formata o retorno de forma legível para o gr.Textbox
+        # 1. Monta um Card HTML para o Risco
+        risco = resultado.get("overall_risk", "NÃO DETECTADO") if isinstance(resultado, dict) else "NÃO DETECTADO"
+        risco = str(risco).upper()
+        atencao = resultado.get("requires_immediate_attention", False) if isinstance(resultado, dict) else False
+        
+        cor_alerta = "#ef4444" if atencao or risco == "ALTO" else "#eab308" if risco == "MÉDIO" else "#22c55e"
+        
+        html_score = f"""
+        <div style="padding: 20px; border-radius: 8px; background-color: {cor_alerta}20; border: 2px solid {cor_alerta}; text-align: center;">
+            <h2 style="margin: 0; color: {cor_alerta};">Risco Geral: {risco}</h2>
+            <p style="margin: 5px 0 0 0; font-size: 16px;"><strong>Atenção Imediata:</strong> {'🚨 SIM' if atencao else '✅ NÃO'}</p>
+        </div>
+        """
+
+        # 2. Monta o Markdown de Detalhes
         if isinstance(resultado, dict):
-            risco = resultado.get("overall_risk", "NÃO DETECTADO").upper()
-            atencao = "SIM" if resultado.get("requires_immediate_attention") else "NÃO"
-            msg = f"📊 ANÁLISE CONCLUÍDA\n\n🔴 Nível de Risco Geral: {risco}\n🚨 Requer Atenção Imediata? {atencao}"
-            logger.info(f"💾 Mensagem retornada: {msg}")
-            return msg
+            detalhes_md = f"""
+### 🧠 Análise por Modalidade
+* **Análise Facial (Visão):** {resultado.get("facial_analysis", "Dados não disponíveis")}
+* **Transcrição/Sentimento (Áudio):** {resultado.get("audio_analysis", "Dados não disponíveis")}
+* **Análise Clínica (Texto):** {resultado.get("text_analysis", "Dados não disponíveis")}
+            """
+        else:
+            detalhes_md = f"O pipeline retornou um formato inesperado:\n\n{str(resultado)}"
         
-        logger.info(f"📋 Resultado em formato string: {str(resultado)}")
-        return str(resultado)
+        # Retorna na ordem exata dos outputs definidos no gr.Blocks
+        return html_score, detalhes_md, resultado if isinstance(resultado, dict) else {"resultado_bruto": str(resultado)}
         
     except FileNotFoundError as e:
         error_msg = log_exception(logger, e, "ARQUIVO_NAO_ENCONTRADO")
-        return f"❌ Arquivo não encontrado:\n{error_msg}\n\n📍 Verifique se o vídeo foi carregado corretamente."
+        erro_html = f"<div style='color: #ef4444; padding: 10px; border: 1px solid #ef4444; border-radius: 8px;'>❌ Arquivo não encontrado:<br>{error_msg}<br><br>📍 Verifique se o vídeo foi carregado corretamente.</div>"
+        return erro_html, "", {"status": "erro", "detalhe": "FileNotFoundError"}
     
     except ImportError as e:
         error_msg = log_exception(logger, e, "IMPORTACAO")
-        msg = f"❌ Erro de dependência:\n{error_msg}\n\n🔧 Dependências disponíveis:\n"
-        msg += "\n".join([f"  {'✅' if v else '❌'} {k}" for k, v in available_deps.items()])
-        return msg
+        deps_html = "<br>".join([f"  {'✅' if v else '❌'} {k}" for k, v in available_deps.items()])
+        erro_html = f"<div style='color: #ef4444; padding: 10px; border: 1px solid #ef4444; border-radius: 8px;'>❌ Erro de dependência:<br>{error_msg}<br><br>🔧 Dependências disponíveis:<br>{deps_html}</div>"
+        return erro_html, "", {"status": "erro", "detalhe": "ImportError"}
     
     except ValueError as e:
         error_msg = log_exception(logger, e, "VALOR_INVALIDO")
-        return f"❌ Valor inválido nos parâmetros:\n{error_msg}"
+        erro_html = f"<div style='color: #ef4444; padding: 10px; border: 1px solid #ef4444; border-radius: 8px;'>❌ Valor inválido nos parâmetros:<br>{error_msg}</div>"
+        return erro_html, "", {"status": "erro", "detalhe": "ValueError"}
     
     except RuntimeError as e:
         error_msg = log_exception(logger, e, "ERRO_EXECUCAO")
-        return f"❌ Erro durante execução (API/Modelo):\n{error_msg}\n\n💡 Possível causa: API Key faltando ou limite de rate reached."
+        erro_html = f"<div style='color: #ef4444; padding: 10px; border: 1px solid #ef4444; border-radius: 8px;'>❌ Erro durante execução (API/Modelo):<br>{error_msg}<br><br>💡 Possível causa: API Key faltando ou limite de rate limit atingido.</div>"
+        return erro_html, "", {"status": "erro", "detalhe": "RuntimeError"}
     
     except Exception as e:
         error_msg = log_exception(logger, e, "ERRO_DESCONHECIDO")
         logger.error(f"Full traceback:\n{traceback.format_exc()}")
-        return f"❌ Erro interno durante a execução do pipeline:\n\n{error_msg}\n\n📋 Stack trace está nos logs."
+        erro_html = f"<div style='color: #ef4444; padding: 10px; border: 1px solid #ef4444; border-radius: 8px;'>❌ Erro interno durante a execução do pipeline:<br>{error_msg}<br><br>📋 Verifique os logs do terminal para o stack trace completo.</div>"
+        return erro_html, "", {"status": "erro", "detalhe": str(e)}
 
 # Monta o design da página web que vai aparecer no Hugging Face
-with gr.Blocks(title="Monitoramento Multimodal") as demo:
+with gr.Blocks(title="Monitoramento Multimodal", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🎙️ Sistema Multimodal de Monitoramento - Saúde da Mulher")
     gr.Markdown("Interface de validação do pipeline do Tech Challenge (Fase 4) - FIAP.")
     
     with gr.Row():
-        with gr.Column():
+        with gr.Column(scale=1):
             input_video = gr.Video(label="Vídeo Clínico (Upload)")
             input_text = gr.Textbox(label="Laudo / Texto Clínico (Opcional)", placeholder="Ex: Paciente gestante, 32 semanas... (Deixe em branco para usar o áudio do vídeo)")
             input_id = gr.Textbox(label="ID do Paciente", placeholder="Ex: PAC-001")
             btn = gr.Button("Executar Análise Multimodal", variant="primary")
         
-        with gr.Column():
-            output_text = gr.Textbox(label="Resultado / Score de Risco", lines=6, interactive=False)
+        with gr.Column(scale=1):
+            gr.Markdown("### 📊 Resultado do Score")
             
-    btn.click(fn=executar_pipeline, inputs=[input_video, input_text, input_id], outputs=output_text)
+            # Card principal de risco
+            output_score = gr.HTML()
+            
+            # Acordeão para detalhes amigáveis
+            with gr.Accordion("Ver Detalhes da Análise", open=True):
+                output_details = gr.Markdown()
+                
+            # Acordeão para o JSON bruto (ótimo para validação técnica)
+            with gr.Accordion("Payload Bruto (JSON)", open=False):
+                output_json = gr.JSON()
+            
+    # Conecta o botão à função, passando os inputs e esperando 3 outputs
+    btn.click(
+        fn=executar_pipeline, 
+        inputs=[input_video, input_text, input_id], 
+        outputs=[output_score, output_details, output_json]
+    )
 
 if __name__ == "__main__":
     logger.info("🌐 Iniciando Gradio Interface")
