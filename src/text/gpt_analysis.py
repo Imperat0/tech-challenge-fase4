@@ -10,7 +10,10 @@ Objetivos cobertos:
 import os
 from openai import OpenAI
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(
+    base_url="https://api-inference.huggingface.co/v1/",
+    api_key=os.environ.get("HF_TOKEN")
+)
 
 SYSTEM_PROMPT_MATERNAL = """
 Você é um assistente especializado em saúde materna e ginecológica.
@@ -53,7 +56,7 @@ def analyze_medical_text(text: str, analysis_type: str = "maternal") -> dict:
     )
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="meta-llama/Meta-Llama-3-8B-Instruct",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text},
@@ -95,7 +98,7 @@ def generate_clinical_report(multimodal_results: dict) -> str:
     """
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="meta-llama/Meta-Llama-3-8B-Instruct",
         messages=[
             {"role": "system", "content": "Você é um assistente clínico especializado em saúde da mulher."},
             {"role": "user", "content": prompt},
